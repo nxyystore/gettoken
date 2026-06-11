@@ -13,6 +13,9 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  // Ativa o cache no Edge (Cloudflare/Vercel) para absorver floods
+  res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+  res.setHeader("Vary", "Authorization");
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") {
@@ -92,7 +95,7 @@ export default async function handler(req, res) {
 
     res.status(upstreamRes.status);
     res.setHeader("Content-Type", contentType.includes("application/json") ? "application/json" : "text/plain; charset=utf-8");
-    res.setHeader("Cache-Control", "no-store, max-age=0");
+    // Removido no-store para herdar o Cache-Control global e bloquear floods no Edge
 
     if (contentType.includes("application/json")) {
       const data = await upstreamRes.json();
