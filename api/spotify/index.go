@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -117,19 +118,27 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer spotifyRes.Body.Close()
 
+	bodyBytes, _ := io.ReadAll(spotifyRes.Body)
 	if spotifyRes.StatusCode != http.StatusOK {
+		log.Printf("Spotify token error: status=%d body=%s totp=%s totpServer=%s ver=%s", spotifyRes.StatusCode, string(bodyBytes), totpLocal, totpServer, ver)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(spotifyRes.StatusCode)
-		json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Failed to get mobile token", "details": fmt.Sprintf("status %d", spotifyRes.StatusCode)})
+		// Try to preserve Spotify's JSON, fallback to text
+		var spotifyErr any
+		if err := json.Unmarshal(bodyBytes, &spotifyErr); err == nil {
+			json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Failed to get mobile token", "details": spotifyErr, "status": spotifyRes.StatusCode})
+		} else {
+			json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Failed to get mobile token", "details": string(bodyBytes), "status": spotifyRes.StatusCode})
+		}
 		return
 	}
 
 	// Decode and re-encode to ensure valid JSON
 	var data any
-	if err := json.NewDecoder(spotifyRes.Body).Decode(&data); err != nil {
+	if err := json.Unmarshal(bodyBytes, &data); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadGateway)
-		json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Failed to parse token response"})
+		json.NewEncoder(w).Encode(map[string]any{"success": false, "error": "Failed to parse token response", "details": string(bodyBytes)})
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
