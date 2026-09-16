@@ -1,21 +1,25 @@
 {
-  "version": 2,
-  "regions": ["iad1"],
-  "redirects": [
-    {
-      "source": "/((?!pandora/gettoken|spotify/gettoken).*)",
-      "destination": "https://1lucas1apk.fun",
-      "permanent": false
+    "version": 2,
+    "regions": ["iad1"],
+    "redirects": [
+        {
+            "source": "/((?!pandora/gettoken|spotify/gettoken).*)",
+            "destination": "https://nxyy.codes",
+            "permanent": false
+        }
+    ],
+    "rewrites": [
+        { "source": "/pandora/gettoken", "destination": "/api/pandora" },
+        { "source": "/spotify/gettoken", "destination": "/api/spotify" }
+    ],
+    "functions": {
+        "api/spotify/index.go": {
+            "memory": 1024,
+            "maxDuration": 30
+        },
+        "api/pandora/index.go": {
+            "memory": 512,
+            "maxDuration": 10
+        }
     }
-  ],
-  "rewrites": [
-    { "source": "/pandora/gettoken", "destination": "/api/gettoken.js" },
-    { "source": "/spotify/gettoken", "destination": "/api/spotify.js" }
-  ],
-  "functions": {
-    "api/spotify.js": {
-      "memory": 1024,
-      "maxDuration": 30
-    }
-  }
 }
